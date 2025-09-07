@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guía Interactiva de Ejes de Motos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Chosen Palette: Warm Neutrals & Slate Blue -->
+    <!-- Application Structure Plan: Se mantiene la estructura de panel de control (dashboard) de una sola vista, pero se expande el área de controles. La barra de controles ahora incluye filtros desplegables separados para la marca, el diámetro del eje y la longitud del eje, permitiendo una exploración detallada y multifacética. El área de contenido principal con la tabla de datos dinámica y las visualizaciones de gráficos se mantiene, pero ahora se actualiza basándose en combinaciones de los nuevos filtros, además de la búsqueda de texto. Esta arquitectura fue elegida para empoderar al usuario con herramientas de filtrado más granulares, lo cual es esencial para un conjunto de datos técnicos como este, permitiendo una exploración más profunda y la identificación de modelos que coincidan exactamente con las especificaciones deseadas. -->
+    <!-- Visualization & Content Choices: 1. Tabla de Datos Interactiva: Report Info -> Lista de modelos y sus medidas de eje. Goal -> Informar, Organizar, Comparar. Viz/Presentation -> Tabla HTML estilizada con Tailwind. Interaction -> Búsqueda de texto libre y filtrado en tiempo real por marca, diámetro y longitud. Justification -> La interactividad se profundiza para manejar múltiples criterios de búsqueda, lo cual es la necesidad principal del usuario. Library/Method -> Vanilla JS, manipulación del DOM. 2. Gráfico de Barras - Distribución de Diámetros: Report Info -> Diámetros de los tres tipos de ejes. Goal -> Comparar frecuencias. Viz/Presentation -> Gráfico de barras. Interaction -> El gráfico se redibuja para reflejar solo los datos de las motos que coinciden con los filtros actuales. Justification -> Permite identificar rápidamente cuáles son los diámetros de eje más comunes en el conjunto de datos filtrado. Library/Method -> Chart.js (Canvas). 3. Gráfico de Dispersión - Relación de Longitud: Report Info -> Longitudes de los ejes delantero y trasero. Goal -> Analizar relaciones. Viz/Presentation -> Gráfico de dispersión. Interaction -> También se actualiza con los filtros. El tooltip al pasar el mouse sobre un punto muestra el modelo de la moto. Justification -> Ayuda a visualizar si existe una correlación entre la longitud del eje delantero y el trasero, ahora con la posibilidad de aislar subconjuntos de datos específicos. Library/Method -> Chart.js (Canvas). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8f7f4;
+        color: #333;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 320px;
+        max-height: 400px;
+      }
+      @media (min-width: 768px) {
+        .chart-container {
+          height: 350px;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #e5e7eb;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #9ca3af;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+      }
+      .table-container {
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8">
+      <header class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800">
+          Guía Interactiva de Ejes de Motocicletas
+        </h1>
+        <p class="text-slate-600 mt-2">
+          Busque, filtre y compare las especificaciones de ejes para los modelos
+          más populares en Argentina.
+        </p>
+      </header>
+
+      <main>
+        <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label
+                for="brand-filter"
+                class="block text-sm font-medium text-slate-700"
+                >Filtrar por Marca</label
+              >
+              <select
+                id="brand-filter"
+                class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm p-2"
+              >
+                <option value="all">Todas</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="diameter-filter"
+                class="block text-sm font-medium text-slate-700"
+                >Filtrar por Diámetro (mm)</label
+              >
+              <select
+                id="diameter-filter"
+                class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm p-2"
+              >
+                <option value="all">Todos</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="length-filter"
+                class="block text-sm font-medium text-slate-700"
+                >Filtrar por Longitud (mm)</label
+              >
+              <select
+                id="length-filter"
+                class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm p-2"
+              >
+                <option value="all">Todas</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="search-input"
+                class="block text-sm font-medium text-slate-700"
+                >Buscar por modelo...</label
+              >
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Ej: XR 150, Wave, Smash..."
+                class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-slate-500 focus:ring-slate-500 sm:text-sm p-2"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div class="lg:col-span-3 bg-white rounded-xl shadow-md p-4 sm:p-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-1">
+              Resultados de la Búsqueda
+            </h2>
+            <p class="text-sm text-slate-500 mb-4">
+              Se encontraron
+              <span id="results-count" class="font-bold">0</span> modelos.
+            </p>
+            <div class="table-container overflow-x-auto">
+              <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    >
+                      Moto
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    >
+                      Eje Delantero
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    >
+                      Eje Horquillón
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    >
+                      Eje Trasero
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="moto-table-body"
+                  class="bg-white divide-y divide-slate-200"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="lg:col-span-2 space-y-8">
+            <div class="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <h3 class="text-lg font-semibold text-slate-800 text-center mb-4">
+                Distribución de Diámetros de Eje
+              </h3>
+              <p class="text-center text-xs text-slate-500 mb-4 -mt-3">
+                Este gráfico muestra la cantidad de modelos que usan cada
+                diámetro de eje, según los filtros aplicados. Permite ver
+                rápidamente cuáles son las medidas más comunes.
+              </p>
+              <div class="chart-container">
+                <canvas id="diameter-chart"></canvas>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <h3 class="text-lg font-semibold text-slate-800 text-center mb-4">
+                Relación de Longitud (Delantero vs. Trasero)
+              </h3>
+              <p class="text-center text-xs text-slate-500 mb-4 -mt-3">
+                Cada punto es una moto. Este gráfico ayuda a ver si hay una
+                relación entre la longitud del eje delantero y el trasero. Pase
+                el mouse sobre un punto para ver el modelo.
+              </p>
+              <div class="chart-container">
+                <canvas id="length-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="text-center mt-12">
+        <p class="text-xs text-slate-500">
+          Datos compilados y presentados de forma interactiva. La información es
+          de referencia y se recomienda verificar con el manual del fabricante.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Conjunto de datos de muestra
+        const motoData = [
+          {
+            brand: "Honda",
+            model: "XR 150",
+            front: "12 mm x 205 mm",
+            swingarm: "17 mm x 260 mm",
+            rear: "15 mm x 260 mm",
+          },
+          {
+            brand: "Honda",
+            model: "XR 125",
+            front: "12 mm x 205 mm",
+            swingarm: "15 mm x 260 mm",
+            rear: "15 mm x 260 mm",
+          },
+          {
+            brand: "Yamaha",
+            model: "XTZ 250",
+            front: "15 mm x 260 mm",
+            swingarm: "17 mm x 310 mm",
+            rear: "15 mm x 310 mm",
+          },
+          {
+            brand: "Yamaha",
+            model: "XTZ 125",
+            front: "15 mm x 210 mm",
+            swingarm: "12 mm x 245 mm",
+            rear: "15 mm x 260 mm",
+          },
+          {
+            brand: "Honda",
+            model: "CB190R",
+            front: "12 mm x 220 mm",
+            swingarm: "12 mm x 240 mm",
+            rear: "12 mm x 240 mm",
+          },
+          {
+            brand: "Honda",
+            model: "Storm",
+            front: "12 mm x 210 mm",
+            swingarm: "15 mm x 280 mm",
+            rear: "12 mm x 225 mm",
+          },
+          {
+            brand: "Yamaha",
+            model: "Crypton 110",
+            front: "10 mm x 200 mm",
+            swingarm: "12 mm x 250 mm",
+            rear: "12 mm x 210 mm",
+          },
+          {
+            brand: "Gilera",
+            model: "Smash 110",
+            front: "12 mm x 215 mm",
+            swingarm: "12 mm x 270 mm",
+            rear: "12 mm x 230 mm",
+          },
+          {
+            brand: "Honda",
+            model: "Wave 110 S",
+            front: "12 mm x 240 mm",
+            swingarm: "12 mm x 215 mm",
+            rear: "12 mm x 220 mm",
+          },
+          {
+            brand: "Honda",
+            model: "CG Titan 150",
+            front: "14 mm x 235 mm",
+            swingarm: "15 mm x 320 mm",
+            rear: "14 mm x 235 mm",
+          },
+          {
+            brand: "Honda",
+            model: "CG Today 125",
+            front: "14 mm x 200 mm",
+            swingarm: "15 mm x 260 mm",
+            rear: "15 mm x 235 mm",
+          },
+          {
+            brand: "Motomel",
+            model: "S2 150",
+            front: "12 mm x 250 mm",
+            swingarm: "14 mm x 263 mm",
+            rear: "15 mm x 310 mm",
+          },
+          {
+            brand: "Honda",
+            model: "GLH 150",
+            front: "12 mm x 270 mm",
+            swingarm: "14 mm x 270 mm",
+            rear: "15 mm x 270 mm",
+          },
+          {
+            brand: "Yamaha",
+            model: "YBR 125",
+            front: "15 mm x 275 mm",
+            swingarm: "15 mm x 310 mm",
+            rear: "15 mm x 270 mm",
+          },
+          {
+            brand: "Zanella",
+            model: "RX 150",
+            front: "12 mm x 270 mm",
+            swingarm: "12 mm x 270 mm",
+            rear: "15 mm x 280 mm",
+          },
+          {
+            brand: "Motomel",
+            model: "Skua 150",
+            front: "14 mm x 270 mm",
+            swingarm: "14 mm x 260 mm",
+            rear: "15 mm x 310 mm",
+          },
+          {
+            brand: "Corven",
+            model: "Triax 150",
+            front: "14 mm x 260 mm",
+            swingarm: "15 mm x 270 mm",
+            rear: "15 mm x 260 mm",
+          },
+          {
+            brand: "Honda",
+            model: "CBX 250 Twister",
+            front: "15 mm x 200 mm",
+            swingarm: "17 mm x 300 mm",
+            rear: "17 mm x 300 mm",
+          },
+          {
+            brand: "Honda",
+            model: "XR 250 Tornado",
+            front: "15 mm x 243 mm",
+            swingarm: "17 mm x 310 mm",
+            rear: "17 mm x 310 mm",
+          },
+          {
+            brand: "Motomel",
+            model: "B110",
+            front: "12 mm x 205 mm",
+            swingarm: "12 mm x 215 mm",
+            rear: "12 mm x 220 mm",
+          },
+          {
+            brand: "Corven",
+            model: "Energy 110",
+            front: "12 mm x 205 mm",
+            swingarm: "12 mm x 215 mm",
+            rear: "12 mm x 215 mm",
+          },
+          {
+            brand: "Keller",
+            model: "KN110-8",
+            front: "12 mm x 215 mm",
+            swingarm: "12 mm x 220 mm",
+            rear: "12 mm x 220 mm",
+          },
+          {
+            brand: "Guerrero",
+            model: "Trip GE 110",
+            front: "10 mm x 216 mm",
+            swingarm: "12 mm x 220 mm",
+            rear: "12 mm x 220 mm",
+          },
+          {
+            brand: "Mondial",
+            model: "LD 110 Max",
+            front: "12 mm x 210 mm",
+            swingarm: "12 mm x 220 mm",
+            rear: "12 mm x 220 mm",
+          },
+          {
+            brand: "Bajaj",
+            model: "Rouser NS 200",
+            front: "15 mm x 230 mm",
+            swingarm: "17 mm x 280 mm",
+            rear: "17 mm x 280 mm",
+          },
+          {
+            brand: "Bajaj",
+            model: "Dominar 400",
+            front: "17 mm x 250 mm",
+            swingarm: "20 mm x 300 mm",
+            rear: "20 mm x 300 mm",
+          },
+          {
+            brand: "Royal Enfield",
+            model: "Himalayan",
+            front: "17 mm x 250 mm",
+            swingarm: "17 mm x 280 mm",
+            rear: "17 mm x 280 mm",
+          },
+        ];
+
+        const searchInput = document.getElementById("search-input");
+        const brandFilter = document.getElementById("brand-filter");
+        const diameterFilter = document.getElementById("diameter-filter");
+        const lengthFilter = document.getElementById("length-filter");
+        const tableBody = document.getElementById("moto-table-body");
+        const resultsCount = document.getElementById("results-count");
+
+        let diameterChart, lengthChart;
+
+        // Función para analizar las dimensiones de un string (ej. "12 mm x 205 mm")
+        function parseDimension(dimStr) {
+          if (typeof dimStr !== "string" || !dimStr.includes("x"))
+            return { diameter: null, length: null };
+          const parts = dimStr.replace(/mm/g, "").trim().split("x");
+          return {
+            diameter: parseFloat(parts[0]),
+            length: parseFloat(parts[1]),
+          };
+        }
+
+        // Función para poblar los filtros desplegables
+        function populateFilters() {
+          const brands = [
+            ...new Set(motoData.map((moto) => moto.brand)),
+          ].sort();
+          brands.forEach((brand) => {
+            const option = document.createElement("option");
+            option.value = brand;
+            option.textContent = brand;
+            brandFilter.appendChild(option);
+          });
+
+          const allDimensions = motoData.flatMap((moto) => [
+            moto.front,
+            moto.swingarm,
+            moto.rear,
+          ]);
+          const diameters = [
+            ...new Set(
+              allDimensions
+                .map((dim) => parseDimension(dim).diameter)
+                .filter((d) => d !== null)
+            ),
+          ].sort((a, b) => a - b);
+          diameters.forEach((dia) => {
+            const option = document.createElement("option");
+            option.value = dia;
+            option.textContent = `${dia} mm`;
+            diameterFilter.appendChild(option);
+          });
+
+          const lengths = [
+            ...new Set(
+              allDimensions
+                .map((dim) => parseDimension(dim).length)
+                .filter((l) => l !== null)
+            ),
+          ].sort((a, b) => a - b);
+          lengths.forEach((len) => {
+            const option = document.createElement("option");
+            option.value = len;
+            option.textContent = `${len} mm`;
+            lengthFilter.appendChild(option);
+          });
+        }
+
+        // Función para renderizar la tabla con los datos filtrados
+        function renderTable(data) {
+          tableBody.innerHTML = "";
+          if (data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-500">No se encontraron modelos que coincidan con su búsqueda.</td></tr>`;
+          } else {
+            data.forEach((moto) => {
+              const row = document.createElement("tr");
+              row.className =
+                "hover:bg-slate-50 transition-colors duration-150";
+              row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-slate-900">${moto.model}</div>
+                                <div class="text-xs text-slate-500">${moto.brand}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${moto.front}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${moto.swingarm}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${moto.rear}</td>
+                        `;
+              tableBody.appendChild(row);
+            });
+          }
+          resultsCount.textContent = data.length;
+        }
+
+        // Función principal para actualizar los gráficos
+        function updateCharts(data) {
+          updateDiameterChart(data);
+          updateLengthChart(data);
+        }
+
+        // Actualiza el gráfico de barras de diámetros
+        function updateDiameterChart(data) {
+          const diameterCounts = { front: {}, swingarm: {}, rear: {} };
+          data.forEach((moto) => {
+            const frontDia = parseDimension(moto.front).diameter;
+            const swingarmDia = parseDimension(moto.swingarm).diameter;
+            const rearDia = parseDimension(moto.rear).diameter;
+
+            if (frontDia)
+              diameterCounts.front[frontDia] =
+                (diameterCounts.front[frontDia] || 0) + 1;
+            if (swingarmDia)
+              diameterCounts.swingarm[swingarmDia] =
+                (diameterCounts.swingarm[swingarmDia] || 0) + 1;
+            if (rearDia)
+              diameterCounts.rear[rearDia] =
+                (diameterCounts.rear[rearDia] || 0) + 1;
+          });
+
+          const allDiameters = [
+            ...new Set([
+              ...Object.keys(diameterCounts.front),
+              ...Object.keys(diameterCounts.swingarm),
+              ...Object.keys(diameterCounts.rear),
+            ]),
+          ].sort((a, b) => a - b);
+
+          const datasets = [
+            {
+              label: "Delantero",
+              data: allDiameters.map((dia) => diameterCounts.front[dia] || 0),
+              backgroundColor: "rgba(59, 130, 246, 0.7)",
+              borderColor: "rgba(59, 130, 246, 1)",
+              borderWidth: 1,
+            },
+            {
+              label: "Horquillón",
+              data: allDiameters.map(
+                (dia) => diameterCounts.swingarm[dia] || 0
+              ),
+              backgroundColor: "rgba(16, 185, 129, 0.7)",
+              borderColor: "rgba(16, 185, 129, 1)",
+              borderWidth: 1,
+            },
+            {
+              label: "Trasero",
+              data: allDiameters.map((dia) => diameterCounts.rear[dia] || 0),
+              backgroundColor: "rgba(239, 68, 68, 0.7)",
+              borderColor: "rgba(239, 68, 68, 1)",
+              borderWidth: 1,
+            },
+          ];
+
+          diameterChart.data.labels = allDiameters.map((d) => `${d} mm`);
+          diameterChart.data.datasets = datasets;
+          diameterChart.update();
+        }
+
+        // Actualiza el gráfico de dispersión de longitud
+        function updateLengthChart(data) {
+          const scatterData = data
+            .map((moto) => ({
+              x: parseDimension(moto.front).length,
+              y: parseDimension(moto.rear).length,
+              label: `${moto.brand} ${moto.model}`,
+            }))
+            .filter((d) => d.x && d.y);
+
+          lengthChart.data.datasets[0].data = scatterData;
+          lengthChart.update();
+        }
+
+        // Lógica principal de filtrado
+        function filterData() {
+          const searchTerm = searchInput.value.toLowerCase();
+          const selectedBrand = brandFilter.value;
+          const selectedDiameter =
+            diameterFilter.value === "all"
+              ? null
+              : parseFloat(diameterFilter.value);
+          const selectedLength =
+            lengthFilter.value === "all"
+              ? null
+              : parseFloat(lengthFilter.value);
+
+          const filtered = motoData.filter((moto) => {
+            const matchesSearch =
+              moto.model.toLowerCase().includes(searchTerm) ||
+              moto.brand.toLowerCase().includes(searchTerm);
+            const matchesBrand =
+              selectedBrand === "all" || moto.brand === selectedBrand;
+
+            let matchesDiameter = true;
+            if (selectedDiameter !== null) {
+              matchesDiameter = [
+                parseDimension(moto.front).diameter,
+                parseDimension(moto.swingarm).diameter,
+                parseDimension(moto.rear).diameter,
+              ].includes(selectedDiameter);
+            }
+
+            let matchesLength = true;
+            if (selectedLength !== null) {
+              matchesLength = [
+                parseDimension(moto.front).length,
+                parseDimension(moto.swingarm).length,
+                parseDimension(moto.rear).length,
+              ].includes(selectedLength);
+            }
+
+            return (
+              matchesSearch && matchesBrand && matchesDiameter && matchesLength
+            );
+          });
+
+          renderTable(filtered);
+          updateCharts(filtered);
+        }
+
+        // Inicializa los gráficos al cargar la página
+        function initializeCharts() {
+          const diameterCtx = document
+            .getElementById("diameter-chart")
+            .getContext("2d");
+          diameterChart = new Chart(diameterCtx, {
+            type: "bar",
+            data: { labels: [], datasets: [] },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: "Nº de Modelos" },
+                },
+                x: { title: { display: true, text: "Diámetro (mm)" } },
+              },
+              plugins: { legend: { position: "top" } },
+            },
+          });
+
+          const lengthCtx = document
+            .getElementById("length-chart")
+            .getContext("2d");
+          lengthChart = new Chart(lengthCtx, {
+            type: "scatter",
+            data: {
+              datasets: [
+                {
+                  label: "Motos",
+                  data: [],
+                  backgroundColor: "rgba(75, 85, 99, 0.7)",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  title: { display: true, text: "Longitud Eje Delantero (mm)" },
+                },
+                y: {
+                  title: { display: true, text: "Longitud Eje Trasero (mm)" },
+                },
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      return context.raw.label || "";
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        // Asigna los escuchadores de eventos
+        searchInput.addEventListener("input", filterData);
+        brandFilter.addEventListener("change", filterData);
+        diameterFilter.addEventListener("change", filterData);
+        lengthFilter.addEventListener("change", filterData);
+
+        // Inicia la aplicación
+        populateFilters();
+        initializeCharts();
+        filterData();
+      });
+    </script>
+  </body>
+</html>
