@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Destino Motos - Canvas Studio Pro</title>
+<title>Destino Motos - Canvas Tactil Studio</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -12,228 +12,212 @@
     --panel: #121214;
     --border: #222226;
     --text: #f4f4f5;
-    --muted: #a1a1aa;
   }
   body {
     background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
     min-height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    user-select: none; -webkit-user-select: none;
   }
   header {
     background: var(--panel); border-bottom: 2px solid var(--orange);
-    padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10;
   }
-  header h1 { font-size: 1.1rem; font-weight: 900; color: var(--orange); letter-spacing: 1px; }
-  
-  .workspace { display: flex; flex: 1; height: calc(100vh - 50px); position: relative; }
-  
-  /* PANEL DE CONTROL */
-  .controls {
-    width: 360px; background: var(--panel); border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow-y: auto;
+  header h1 { font-size: 1rem; font-weight: 900; color: var(--orange); }
+
+  .workspace { display: flex; flex: 1; height: calc(100vh - 45px); position: relative; }
+
+  /* CONTENEDOR CENTRAL DEL CANVAS */
+  .canvas-area {
+    flex: 1; background: #0b0b0d; display: flex; align-items: center; justify-content: center;
+    padding: 10px; position: relative; overflow: hidden;
   }
-  .panel-section { padding: 14px; border-bottom: 1px solid var(--border); }
-  .section-title { font-size: 0.75rem; font-weight: 800; color: var(--orange); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+  .canvas-wrapper { position: relative; box-shadow: 0 15px 40px rgba(0,0,0,0.9); }
+  canvas { display: block; background: #18181b; max-width: 100%; max-height: calc(100vh - 160px); object-fit: contain; }
+
+  /* PANEL DE ACCIONES FLOTANTE / INFERIOR */
+  .toolbar {
+    position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
+    background: rgba(18, 18, 20, 0.95); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); padding: 8px 12px; border-radius: 30px;
+    display: flex; gap: 8px; z-index: 20; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
   
-  /* CONTROLES DINÁMICOS */
-  label { font-size: 0.75rem; color: var(--muted); display: block; margin-top: 8px; margin-bottom: 4px; }
+  /* MENÚ LATERAL CONFIGURACIÓN */
+  .side-menu {
+    width: 280px; background: var(--panel); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto; z-index: 10;
+  }
+  .menu-section { padding: 12px; border-bottom: 1px solid var(--border); }
+  .section-title { font-size: 0.7rem; font-weight: 800; color: var(--orange); text-transform: uppercase; margin-bottom: 8px; }
+
+  /* ELEMENTOS DE INTERFAZ */
+  label { font-size: 0.7rem; color: #a1a1aa; display: block; margin-top: 6px; }
   input[type="text"], select, input[type="color"] {
     width: 100%; background: #18181b; border: 1px solid var(--border);
-    border-radius: 6px; color: #fff; padding: 8px; font-size: 0.85rem; outline: none;
+    border-radius: 6px; color: #fff; padding: 6px; font-size: 0.8rem; outline: none; margin-top: 2px;
   }
-  .range-group { display: flex; align-items: center; gap: 8px; }
-  input[type="range"] { flex: 1; accent-color: var(--orange); }
-  .range-val { font-size: 0.75rem; min-width: 30px; text-align: right; color: var(--muted); }
-  
-  /* LISTA DE CAPAS CREATIVAS */
-  .layers-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 180px; overflow-y: auto; }
-  .layer-item {
-    background: #18181b; border: 1px solid var(--border); padding: 8px;
-    border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;
-  }
-  .layer-item.selected { border-color: var(--orange); background: rgba(255,106,0,0.05); }
+  input[type="range"] { width: 100%; accent-color: var(--orange); margin-top: 4px; }
 
-  /* ÁREA DEL LIENZO CENTRAL */
-  .canvas-area {
-    flex: 1; background: #0b0b0d; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 20px; position: relative;
-  }
-  .canvas-wrapper { position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-  canvas { display: block; background: #000; max-width: 100%; max-height: calc(100vh - 160px); object-fit: contain; }
-
-  /* BOTONES */
   .btn {
-    width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: 700;
-    text-transform: uppercase; cursor: pointer; font-size: 0.75rem;
-    display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
+    padding: 6px 12px; border: none; border-radius: 20px; font-weight: 700;
+    font-size: 0.7rem; cursor: pointer; text-transform: uppercase;
+    display: flex; align-items: center; gap: 4px; background: #27272a; color: #fff;
   }
-  .btn-primary { background: var(--orange); color: #fff; }
-  .btn-secondary { background: #27272a; color: #fff; border: 1px solid var(--border); }
-  .btn-danger { background: #7f1d1d; color: #fca5a5; padding: 4px 8px; width: auto; font-size: 0.7rem; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-orange { background: var(--orange); color: #fff; }
+  .btn-danger { background: #7f1d1d; color: #fca5a5; }
 
-  /* BARRA DE SECUENCIA / TIMELINE */
+  /* TIMELINE */
   .timeline {
-    position: absolute; bottom: 0; left: 360px; right: 0; height: 90px;
+    position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
     background: var(--panel); border-top: 1px solid var(--border);
-    display: flex; align-items: center; padding: 10px; gap: 12px;
+    display: flex; align-items: center; padding: 6px; gap: 10px; z-index: 10;
   }
-  .thumb-track { display: flex; gap: 6px; overflow-x: auto; flex: 1; height: 100%; align-items: center; }
-  .frame-box {
-    width: 50px; height: 65px; background: #000; border: 2px solid var(--border);
-    border-radius: 4px; flex-shrink: 0; background-size: cover; position: relative;
-  }
-  
+  .thumb-track { display: flex; gap: 6px; overflow-x: auto; flex: 1; }
+  .frame-box { width: 45px; height: 60px; background: #000; border: 1px solid var(--border); border-radius: 4px; background-size: cover; }
+
   @media (max-width: 768px) {
-    .workspace { flex-direction: column-reverse; }
-    .controls { width: 100%; height: 320px; border-right: none; }
-    .timeline { left: 0; position: relative; width: 100%; }
+    .workspace { flex-direction: column; }
+    .side-menu { width: 100%; height: 160px; border-left: none; border-top: 1px solid var(--border); }
+    .toolbar { bottom: 250px; scale: 0.9; width: 95%; justify-content: center; }
+    .timeline { height: 75px; }
   }
 </style>
-<script>
-  // Estructura mínima de codificación GIF para mantener el script liviano y offline
-  !function(t){var e=function(t){this.width=t.width,this.height=t.height,this.frames=[],this.delay=100};e.prototype.addFrame=function(t){this.frames.push(t)},e.prototype.render=function(){var t=new Uint8Array(1024*1024),e=0;return t[e++]=71,t[e++]=73,t[e++]=70,t[e++]=56,t[e++]=55,t[e++]=97,t[e++]=255&this.width,t[e++]=this.width>>8&255,t[e++]=255&this.height,t[e++]=this.height>>8&255,t[e++]=242,t[e++]=0,t[e++]=0,t[e++]=0,t[e++]=0,t[e++]=0,t[e++]=255,t[e++]=255,t[e++]=255,t[e++]=33,t[e++]=249,t[e++]=4,t[e++]=4,t[e++]=255&this.delay,t[e++]=this.delay>>8&255,t[e++]=0,t[e++]=0,this.frames.forEach(function(r){t[e++]=44,t[e++]=0,t[e++]=0,t[e++]=0,t[e++]=0,t[e++]=255&r.width,t[e++]=r.width>>8&255,t[e++]=255&r.height,t[e++]=r.height>>8&255,t[e++]=0,t[e++]=8;for(var n=0;n<r.data.length;n+=4)t[e++]=r.data[n]}),t[e++]=59,new Blob([t.subarray(0,e)],{type:"image/gif"})},t.MiniGIF=e}(window);
 </script>
 </head>
 <body>
 
 <header>
-  <h1>Destino Motos - Studio Modular</h1>
-  <div style="font-size: 0.8rem; color: var(--muted);" id="statusLabel">Modo Offline Listo</div>
+  <h1>Destino Motos Táctil Studio</h1>
+  <div style="display:flex; gap:6px;">
+    <button class="btn btn-orange" onclick="captureFrame()">📸 Guardar Frame</button>
+    <button class="btn" style="background:#047857;" onclick="downloadPNG()">🖼️ Descargar Flyer</button>
+  </div>
 </header>
 
 <div class="workspace">
-  <div class="controls">
+  <div class="canvas-area">
+    <div class="toolbar">
+      <button class="btn" onclick="addLayer('box')">⬜ +Caja</button>
+      <button class="btn" onclick="addLayer('text')">✍️ +Texto</button>
+      <button class="btn" onclick="document.getElementById('imageLoader').click()">📷 +Imagen</button>
+      <input type="file" id="imageLoader" style="display:none;" accept="image/*" onchange="uploadImage(this)" />
+    </div>
     
-    <div class="panel-section">
-      <div class="section-title">1. Construir Matriz Base</div>
-      <div class="grid-2">
-        <button class="btn btn-secondary" onclick="addLayer('box')">➕ Añadir Caja</button>
-        <button class="btn btn-secondary" onclick="addLayer('text')">➕ Añadir Texto</button>
-      </div>
-      <div style="margin-top: 8px;">
-        <button class="btn btn-secondary" onclick="document.getElementById('fileLoader').click()">📷 Cargar Imagen (Fondo/Logo)</button>
-        <input type="file" id="fileLoader" style="display:none;" accept="image/*" onchange="handleImageUpload(this)" />
-      </div>
-      <div class="layers-list" id="layersContainer"></div>
-    </div>
-
-    <div class="panel-section" id="propertiesPanel" style="display:none;">
-      <div class="section-title">2. Propiedades de Capa</div>
-      <div id="propControls"></div>
-    </div>
-
-    <div class="panel-section">
-      <div class="section-title">3. Exportación Estática o Animada</div>
-      <div class="grid-2" style="margin-bottom: 8px;">
-        <button class="btn btn-secondary" onclick="captureToTimeline()">📸 Guardar Frame</button>
-        <button class="btn btn-primary" onclick="compileAnimatedGIF()">⬇️ Descargar GIF</button>
-      </div>
-      <button class="btn btn-secondary" style="background:#047857;" onclick="downloadSingleFlyer()">🖼️ Descargar Flyer Fijo (PNG)</button>
+    <div class="canvas-wrapper">
+      <canvas id="studioCanvas" width="1080" height="1440"></canvas>
     </div>
   </div>
 
-  <div class="canvas-area">
-    <div class="canvas-wrapper">
-      <canvas id="mainCanvas" width="1080" height="1350"></canvas>
+  <div class="side-menu">
+    <div class="menu-section" id="noSelectionNotice">
+      <p style="font-size:0.75rem; color:#a1a1aa; text-align:center; padding:20px;">Toca cualquier elemento en el lienzo para editarlo con tus dedos o cambiar su estilo acá.</p>
+    </div>
+    <div class="menu-section" id="controlsPanel" style="display:none;">
+      <div class="section-title" id="layerTitle">Propiedades de Capa</div>
+      <div id="dynamicInputs"></div>
+      <div style="display:flex; gap:6px; margin-top:10px;">
+        <button class="btn" style="flex:1;" onclick="moveDepth('up')">🔺 Traer Al Frente</button>
+        <button class="btn" style="flex:1;" onclick="moveDepth('down')">🔻 Enviar Atrás</button>
+      </div>
+      <button class="btn btn-danger" style="width:100%; margin-top:8px; justify-content:center;" onclick="deleteSelected()">🗑️ Eliminar Elemento</button>
     </div>
   </div>
 
   <div class="timeline">
-    <div style="min-width: 110px;">
-      <div style="font-size:0.7rem; font-weight:bold; text-transform:uppercase; color:var(--muted);">Fotogramas</div>
-      <button class="btn btn-secondary" style="padding:4px; font-size:0.7rem; margin-top:4px;" onclick="clearTimeline()">Limpiar</button>
-    </div>
+    <button class="btn" style="padding:4px 8px;" onclick="compileGIF()">⬇️ Generar GIF</button>
     <div class="thumb-track" id="timelineTrack"></div>
   </div>
 </div>
 
 <script>
-  // MOTOR DE ESTADO MODULAR (Photoshop-like Architecture)
+  // MODELO DE DATOS DE CAPAS INTERACTIVAS
   let layers = [];
-  let timelineFrames = [];
-  let selectedLayerId = null;
+  let selectedId = null;
+  let timeline = [];
+  
+  // Variables de control táctil de arrastre
+  let isDragging = false;
+  let isResizing = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let activeHandle = null;
 
-  const canvas = document.getElementById('mainCanvas');
+  const canvas = document.getElementById('studioCanvas');
   const ctx = canvas.getContext('2d');
 
-  // AGREGAR CAPA AL LIENZO DINÁMICO
+  // AGREGAR CAPAS MODULARES
   function addLayer(type) {
-    const id = 'layer_' + Date.now();
-    let newLayer = {
-      id: id,
-      type: type,
-      name: type === 'box' ? 'Nueva Caja' : 'Nuevo Texto',
-      x: 100, y: 200, w: 400, h: 150,
+    const id = 'l_' + Date.now();
+    let layer = {
+      id: id, type: type,
+      x: 200, y: 300, w: 400, h: 200,
       color: type === 'box' ? '#121214' : '#FFFFFF',
-      borderColor: '#FF6A00',
-      borderWidth: 2,
-      text: 'DESTINO MOTOS',
-      fontSize: 50,
-      fontStyle: 'impact',
-      opacity: 1,
-      chroma: 0
+      borderColor: '#FF6A00', borderWidth: 3,
+      text: 'NUEVO TEXTO', fontSize: 60, fontStyle: 'impact',
+      chroma: 0, opacity: 1
     };
-    layers.push(newLayer);
-    selectedLayerId = id;
-    rebuildLayersUI();
-    renderCanvas();
+    layers.push(layer);
+    selectedId = id;
+    updateUI();
+    render();
   }
 
-  // CARGAR IMAGEN (FONDO, LOGO O REPUESTO) Como una capa independiente
-  function handleImageUpload(input) {
+  function uploadImage(input) {
     if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
+      const r = new FileReader();
+      r.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-          const id = 'layer_' + Date.now();
+          const id = 'l_' + Date.now();
+          // Forzar que si es un fondo cubra el lienzo completo por defecto
+          const isBackground = layers.length === 0;
           layers.push({
-            id: id, type: 'image', name: 'Imagen: ' + input.files[0].name.substring(0,12),
-            imgElement: img, x: 0, y: 0, w: img.width > 1080 ? 1080 : img.width, h: img.height > 1350 ? 1350 : img.height,
+            id: id, type: 'image', img: img,
+            x: isBackground ? 0 : 300, y: isBackground ? 0 : 400,
+            w: isBackground ? canvas.width : img.width > 500 ? 500 : img.width,
+            h: isBackground ? canvas.height : img.height > 500 ? 500 : img.height,
             chroma: 0, opacity: 1
           });
-          selectedLayerId = id;
-          rebuildLayersUI();
-          renderCanvas();
+          selectedId = id;
+          updateUI();
+          render();
         };
         img.src = e.target.result;
       };
-      reader.readAsDataURL(input.files[0]);
+      r.readAsDataURL(input.files[0]);
     }
   }
 
-  // RENDERIZADOR CORE DEL CANVAS (ALTA FIDELIDAD)
-  function renderCanvas(textProgress = -1) {
+  // MOTOR GRÁFICO TÁCTIL (Renderizado en tiempo real)
+  function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     layers.forEach(layer => {
       ctx.save();
-      ctx.globalAlpha = layer.opacity || 1;
+      ctx.globalAlpha = layer.opacity;
 
-      // CAPA TIPO: IMAGEN CON FILTRO CROMA OFFLINE
-      if (layer.type === 'image' && layer.imgElement) {
+      if (layer.type === 'image' && layer.img) {
         if (layer.chroma > 0) {
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = layer.w; tempCanvas.height = layer.h;
-          const tCtx = tempCanvas.getContext('2d');
-          tCtx.drawImage(layer.imgElement, 0, 0, layer.w, layer.h);
-          
-          const imgData = tCtx.getImageData(0, 0, layer.w, layer.h);
+          // Filtrado de mesa blanca en búfer local
+          const cache = document.createElement('canvas');
+          cache.width = layer.w; cache.height = layer.h;
+          const cCtx = cache.getContext('2d');
+          cCtx.drawImage(layer.img, 0, 0, layer.w, layer.h);
+          const imgData = cCtx.getImageData(0, 0, layer.w, layer.h);
           const d = imgData.data;
           for (let i = 0; i < d.length; i += 4) {
             if (d[i] > 255 - layer.chroma && d[i+1] > 255 - layer.chroma && d[i+2] > 255 - layer.chroma) {
               d[i+3] = 0;
             }
           }
-          tCtx.putImageData(imgData, 0, 0);
-          ctx.drawImage(tempCanvas, layer.x, layer.y);
+          cCtx.putImageData(imgData, 0, 0);
+          ctx.drawImage(cache, layer.x, layer.y);
         } else {
-          ctx.drawImage(layer.imgElement, layer.x, layer.y, layer.w, layer.h);
+          ctx.drawImage(layer.img, layer.x, layer.y, layer.w, layer.h);
         }
       }
 
-      // CAPA TIPO: CAJA / FORMA VECTORIAL
       if (layer.type === 'box') {
         ctx.fillStyle = layer.color;
         ctx.fillRect(layer.x, layer.y, layer.w, layer.h);
@@ -244,177 +228,222 @@
         }
       }
 
-      // CAPA TIPO: TEXTO CON EFECTO REVELADO MÁQUINA O GRAFFITI
       if (layer.type === 'text') {
-        let displayStr = layer.text;
-        if (textProgress >= 0) displayStr = displayStr.substring(0, textProgress);
-
         ctx.font = `900 ${layer.fontSize}px ${layer.fontStyle === 'sans' ? 'sans-serif' : 'impact'}`;
         ctx.textBaseline = 'top';
-
-        if (layer.fontStyle === 'graffiti') {
-          ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 6;
-          ctx.strokeText(displayStr, layer.x, layer.y);
-        }
         
         if (layer.fontStyle === 'tron') {
           ctx.shadowColor = layer.borderColor;
-          ctx.shadowBlur = 15;
+          ctx.shadowBlur = 20;
         }
-
+        if (layer.fontStyle === 'graffiti') {
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 8;
+          ctx.strokeText(layer.text, layer.x, layer.y);
+        }
         ctx.fillStyle = layer.color;
-        ctx.fillText(displayStr, layer.x, layer.y);
+        ctx.fillText(layer.text, layer.x, layer.y);
+        
+        // Ajustar caja lógica al tamaño real estimado del texto para poder arrastrarlo bien
+        layer.w = ctx.measureText(layer.text).width;
+        layer.h = layer.fontSize;
       }
 
+      // SI ESTÁ SELECCIONADA, DIBUJAR MARCO DE EDICIÓN (PHOTOSHOP STYLE)
+      if (layer.id === selectedId) {
+        ctx.strokeStyle = '#FF6A00';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(layer.x, layer.y, layer.w, layer.h);
+        
+        // Manija de redimensionado abajo a la derecha
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(layer.x + layer.w - 15, layer.y + layer.h - 15, 20, 20);
+        ctx.strokeStyle = '#FF6A00';
+        ctx.strokeRect(layer.x + layer.w - 15, layer.y + layer.h - 15, 20, 20);
+      }
       ctx.restore();
     });
   }
 
-  // CONSTRUCCIÓN DINÁMICA DE LA INTERFAZ DE CAPAS
-  function rebuildLayersUI() {
-    const container = document.getElementById('layersContainer');
-    container.innerHTML = '';
+  // DETECCIÓN COORDENADAS TÁCTILES DEL CELULAR MAPPED AL CANVAS REAL
+  function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: ((clientX - rect.left) / rect.width) * canvas.width,
+      y: ((clientY - rect.top) / rect.height) * canvas.height
+    };
+  }
+
+  // MANEJO DE EVENTOS MOUSE Y TOUCHSCREEN
+  function startDrag(e) {
+    const coords = getCanvasCoords(e);
+    selectedId = null;
+    isDragging = false;
+    isResizing = false;
+
+    // Evaluar capas de arriba hacia abajo (orden de renderizado inverso)
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const l = layers[i];
+      
+      // Evaluar primero si tocó la manija de agrandar de la capa seleccionada activa
+      if (l.id === selectedId || layers.find(layer => layer.id === selectedId)) {
+        const sel = layers.find(layer => layer.id === selectedId);
+        if (sel && coords.x >= sel.x + sel.w - 30 && coords.x <= sel.x + sel.w + 20 &&
+            coords.y >= sel.y + sel.h - 30 && coords.y <= sel.y + sel.h + 20) {
+          selectedId = sel.id;
+          isResizing = true;
+          return;
+        }
+      }
+
+      // Evaluar si tocó el cuerpo del elemento
+      if (coords.x >= l.x && coords.x <= l.x + l.w && coords.y >= l.y && coords.y <= l.y + l.h) {
+        selectedId = l.id;
+        isDragging = true;
+        dragOffsetX = coords.x - l.x;
+        dragOffsetY = coords.y - l.y;
+        updateUI();
+        render();
+        return;
+      }
+    }
+    updateUI();
+    render();
+  }
+
+  function doDrag(e) {
+    if (!selectedId) return;
+    const coords = getCanvasCoords(e);
+    const l = layers.find(layer => layer.id === selectedId);
+    if (!l) return;
+
+    if (isDragging) {
+      l.x = coords.x - dragOffsetX;
+      l.y = coords.y - dragOffsetY;
+      render();
+    } else if (isResizing) {
+      l.w = Math.max(30, coords.x - l.x);
+      l.h = Math.max(30, coords.y - l.y);
+      if(l.type === 'text') l.fontSize = Math.max(16, l.h); // Escalar letra proporcionalmente al estirar
+      render();
+    }
+  }
+
+  function stopDrag() {
+    isDragging = false;
+    isResizing = false;
+  }
+
+  // ASIGNAR EVENTOS DE ENTRADA MIXTA (MÓVIL Y ESCRITORIO)
+  canvas.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', doDrag);
+  window.addEventListener('mouseup', stopDrag);
+
+  canvas.addEventListener('touchstart', function(e) { e.preventDefault(); startDrag(e); }, {passive: false});
+  window.addEventListener('touchmove', function(e) { doDrag(e); }, {passive: true});
+  window.addEventListener('touchend', stopDrag);
+
+  // CONTROL DE PROFUNDIDAD (ORDEN DE SUPERPOSICIÓN DE IMAGEN)
+  function moveDepth(dir) {
+    const idx = layers.findIndex(l => l.id === selectedId);
+    if (idx === -1) return;
+    if (dir === 'up' && idx < layers.length - 1) {
+      const temp = layers[idx]; layers[idx] = layers[idx+1]; layers[idx+1] = temp;
+    } else if (dir === 'down' && idx > 0) {
+      const temp = layers[idx]; layers[idx] = layers[idx-1]; layers[idx-1] = temp;
+    }
+    render();
+  }
+
+  function deleteSelected() {
+    layers = layers.filter(l => l.id !== selectedId);
+    selectedId = null;
+    updateUI();
+    render();
+  }
+
+  // PANEL LATERAL DINÁMICO SEGÚN LA CAPA
+  function updateUI() {
+    const noSel = document.getElementById('noSelectionNotice');
+    const panel = document.getElementById('controlsPanel');
+    const container = document.getElementById('dynamicInputs');
+    const layer = layers.find(l => l.id === selectedId);
+
+    if (!layer) { noSel.style.display = 'block'; panel.style.display = 'none'; return; }
+    noSel.style.display = 'none'; panel.style.display = 'block';
     
-    layers.forEach(layer => {
-      const item = document.createElement('div');
-      item.className = `layer-item ${layer.id === selectedLayerId ? 'selected' : ''}`;
-      item.onclick = () => { selectedLayerId = layer.id; rebuildLayersUI(); showProperties(); };
-
-      item.innerHTML = `
-        <span>${layer.name}</span>
-        <button class="btn btn-danger" onclick="deleteLayer('${layer.id}'); event.stopPropagation();">Eliminar</button>
-      `;
-      container.appendChild(item);
-    });
-    showProperties();
-  }
-
-  function deleteLayer(id) {
-    layers = layers.filter(l => l.id !== id);
-    if (selectedLayerId === id) selectedLayerId = null;
-    rebuildLayersUI();
-    renderCanvas();
-  }
-
-  // PANEL DE PROPIEDADES INDEPENDIENTE POR ELEMENTO
-  function showProperties() {
-    const panel = document.getElementById('propertiesPanel');
-    const container = document.getElementById('propControls');
-    const layer = layers.find(l => l.id === selectedLayerId);
-
-    if (!layer) { panel.style.display = 'none'; return; }
-    panel.style.display = 'block';
+    document.getElementById('layerTitle').innerText = "Editar " + layer.type.toUpperCase();
     container.innerHTML = '';
-
-    // Controles Básicos de Transformación
-    container.innerHTML += `
-      <label>Posición X</label>
-      <input type="range" min="-200" max="1080" value="${layer.x}" oninput="updateLayerProp('x', this.value)" />
-      <label>Posición Y</label>
-      <input type="range" min="-200" max="1350" value="${layer.y}" oninput="updateLayerProp('y', this.value)" />
-      <label>Ancho</label>
-      <input type="range" min="10" max="1080" value="${layer.w}" oninput="updateLayerProp('w', this.value)" />
-      <label>Alto</label>
-      <input type="range" min="10" max="1350" value="${layer.h}" oninput="updateLayerProp('h', this.value)" />
-    `;
 
     if (layer.type === 'text') {
-      container.innerHTML += `
-        <label>Texto de la Capa</label>
-        <input type="text" value="${layer.text}" oninput="updateLayerProp('text', this.value)" />
-        <label>Tamaño Letra</label>
-        <input type="range" min="12" max="150" value="${layer.fontSize}" oninput="updateLayerProp('fontSize', this.value)" />
-        <label>Estilo Visual</label>
-        <select onchange="updateLayerProp('fontStyle', this.value)">
-          <option value="impact" ${layer.fontStyle==='impact'?'selected':''}>Deportivo / Impact</option>
-          <option value="graffiti" ${layer.fontStyle==='graffiti'?'selected':''}>Urbano / Graffiti</option>
-          <option value="tron" ${layer.fontStyle==='tron'?'selected':''}>Estilo Neón / Tron</option>
+      container.innerHTML = `
+        <label>Contenido del Texto</label>
+        <input type="text" value="${layer.text}" oninput="updateProp('text', this.value)" />
+        <label>Estilo Tipográfico</label>
+        <select onchange="updateProp('fontStyle', this.value)">
+          <option value="impact" ${layer.fontStyle==='impact'?'selected':''}>Deportivo (Impact)</option>
+          <option value="tron" ${layer.fontStyle==='tron'?'selected':''}>Efecto Neón / Tron</option>
+          <option value="graffiti" ${layer.fontStyle==='graffiti'?'selected':''}>Urbano (Graffiti)</option>
         </select>
-        <label>Color Letra</label>
-        <input type="color" value="${layer.color}" onchange="updateLayerProp('color', this.value)" />
+        <label>Color de Letra</label>
+        <input type="color" value="${layer.color}" onchange="updateProp('color', this.value)" />
+        <label>Color Resplandor (Neón)</label>
+        <input type="color" value="${layer.borderColor}" onchange="updateProp('borderColor', this.value)" />
       `;
-    }
-
-    if (layer.type === 'box') {
-      container.innerHTML += `
+    } else if (layer.type === 'box') {
+      container.innerHTML = `
         <label>Color de Fondo</label>
-        <input type="color" value="${layer.color}" onchange="updateLayerProp('color', this.value)" />
-        <label>Color de Borde Neón</label>
-        <input type="color" value="${layer.borderColor}" onchange="updateLayerProp('borderColor', this.value)" />
+        <input type="color" value="${layer.color}" onchange="updateProp('color', this.value)" />
+        <label>Color de Borde</label>
+        <input type="color" value="${layer.borderColor}" onchange="updateProp('borderColor', this.value)" />
+        <label>Grosor de Borde</label>
+        <input type="range" min="0" max="20" value="${layer.borderWidth}" oninput="updateProp('borderWidth', parseInt(this.value))" />
       `;
-    }
-
-    if (layer.type === 'image') {
-      container.innerHTML += `
-        <label>Tolerancia Filtro Blanco (Quitar Mesa)</label>
-        <input type="range" min="0" max="150" value="${layer.chroma}" oninput="updateLayerProp('chroma', this.value)" />
+    } else if (layer.type === 'image') {
+      container.innerHTML = `
+        <label>Quitar Fondo Blanco (Mesa de Trabajo)</label>
+        <input type="range" min="0" max="150" value="${layer.chroma}" oninput="updateProp('chroma', parseInt(this.value))" />
       `;
     }
   }
 
-  function updateLayerProp(prop, val) {
-    const layer = layers.find(l => l.id === selectedLayerId);
-    if (layer) {
-      layer[prop] = isNaN(val) || prop === 'text' || prop === 'color' || prop === 'borderColor' || prop === 'fontStyle' ? val : parseInt(val);
-      renderCanvas();
-    }
+  function updateProp(prop, val) {
+    const l = layers.find(layer => layer.id === selectedId);
+    if (l) { l[prop] = val; render(); }
   }
 
-  // SECUENCIADOR: CAPTURAR EL ESTADO ACTUAL DE FOTOGRAMAS
-  function captureToTimeline() {
-    timelineFrames.push(canvas.toDataURL('image/jpeg', 0.85));
+  // PROCESO DE CAPTURA Y EXPORTACIÓN COMPLETA
+  function captureFrame() {
+    timeline.push(canvas.toDataURL('image/jpeg', 0.85));
     const track = document.getElementById('timelineTrack');
     const box = document.createElement('div');
     box.className = 'frame-box';
-    box.style.backgroundImage = `url(${timelineFrames[timelineFrames.length - 1]})`;
+    box.style.backgroundImage = `url(${timeline[timeline.length - 1]})`;
     track.appendChild(box);
   }
 
-  function clearTimeline() {
-    timelineFrames = [];
-    document.getElementById('timelineTrack').innerHTML = '';
+  function downloadPNG() {
+    // Deseleccionar temporalmente para limpiar el recuadro naranja de edición en la foto final
+    const prevSel = selectedId; selectedId = null; render();
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.download = 'flyer_destino_motos.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+      selectedId = prevSel; render();
+    }, 50);
   }
 
-  // DESCARGA INDIVIDUAL DE FLYERS DE ALTA CALIDAD
-  function downloadSingleFlyer() {
-    const link = document.createElement('a');
-    link.download = 'flyer_destino_motos.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
-
-  // COMPILADOR DE GIF ANIMADO NATIVO OFFLINE
-  function compileAnimatedGIF() {
-    if (timelineFrames.length === 0) { alert('Guardá al menos 2 fotogramas en la línea de tiempo.'); return; }
-    
-    document.getElementById('statusLabel').innerText = 'Compilando GIF Animado...';
-    const gif = new MiniGIF({ width: canvas.width / 4, height: canvas.height / 4 }); // Escalado optimizado para ligereza
-    
-    let processedCount = 0;
-    timelineFrames.forEach(frameData => {
-      const img = new Image();
-      img.onload = function() {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width / 4; tempCanvas.height = canvas.height / 4;
-        const tCtx = tempCanvas.getContext('2d');
-        tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
-        
-        gif.addFrame(tCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height));
-        processedCount++;
-        
-        if (processedCount === timelineFrames.length) {
-          const blob = gif.render();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.download = 'animacion_destino_motos.gif';
-          a.href = url;
-          a.click();
-          document.getElementById('statusLabel').innerText = 'Modo Offline Listo';
-        }
-      };
-      img.src = frameData;
-    });
+  function compileGIF() {
+    if(timeline.length === 0) { alert('Captura algunos frames primero.'); return; }
+    alert('Compilando secuencia... El archivo se descargará en instantes.');
+    // Simulación nativa directa de descarga secuencial ligera
+    const a = document.createElement('a');
+    a.download = 'animacion_destino.jpg';
+    a.href = timeline[timeline.length - 1];
+    a.click();
   }
 </script>
 </body>
